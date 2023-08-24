@@ -1,0 +1,109 @@
+version: '3'
+
+services:
+  # Definindo o serviço do Snipe-IT
+  snipeit:
+    # Especificando a imagem a ser usada
+    image: tiagommota/snipe-it
+    # Nome do contêiner para fácil identificação
+    container_name: snipeit
+    # Configuração para reiniciar automaticamente o contêiner se ele parar ou falhar
+    restart: unless-stopped
+    # Redirecionando a porta do contêiner para a porta da máquina host
+    ports:
+      - "8099:80"
+    # Configurando os volumes para persistência de dados
+    volumes:
+      # Mapeando a pasta de uploads do Snipe-IT para um volume externo
+      - snipeit-data:/var/www/html/public/uploads
+      # Mapeando a pasta de backups do Snipe-IT para um volume externo
+      - snipeit-backups:/var/www/html/storage/backups
+      # Mapeando a pasta de dados do Snipe-IT para um volume externo
+      - snipeit-data:/data
+    # Configurando as variáveis de ambiente necessárias para o Snipe-IT
+    environment:
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_URL=${APP_URL}
+      - MAIL_DRIVER=${MAIL_DRIVER}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_ENCRYPTION=${MAIL_ENCRYPTION}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    # Especificando os serviços nos quais este serviço depende
+    depends_on:
+      - db
+      - redis
+    # Especificando a rede usada pelo serviço
+    networks:
+      - snipeit-network
+
+  # Definindo o serviço do MySQL
+  db:
+    # Especificando a imagem a ser usada
+    image: mysql:8.0.33
+    # Nome do contêiner para fácil identificação
+    container_name: snipeit-db
+    # Configuração para reiniciar automaticamente o contêiner se ele parar ou falhar
+    restart: unless-stopped
+    
+    ports:
+      - "3309:3306"
+    # Configurando as variáveis de ambiente necessárias para o MySQL
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    # Configurando os volumes para persistência de dados
+    volumes:
+      # Mapeando a pasta de dados do MySQL para um volume externo
+      - mysql-data:/var/lib/mysql
+    # Especificando a rede usada pelo serviço
+    networks:
+      - snipeit-network
+
+  # Definindo o serviço do Redis
+  redis:
+    # Especificando a imagem a ser usada
+    image: redis:6-alpine
+    # Nome do contêiner para fácil identificação
+    container_name: snipeit-redis
+    # Configuração para reiniciar automaticamente o contêiner se ele parar ou falhar
+    restart: unless-stopped
+    # Variáveis de ambiente usadas pelo container
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    # Volume montado no container
+    volumes:
+      # Volume para persistência dos dados
+      - redis-data:/data
+    # Rede do serviço
+    networks:
+      - snipeit-network
+
+# Definição de volumes usados pelos containers
+volumes:
+  mysql-data:
+  snipeit-data:
+
+  snipeit-backups:
+  redis-data:
+
+# Definição de rede usada pelos containers
+networks:
+  snipeit-network:
+    # Driver da rede
+    driver: bridge
+    # Rede externa usada pelo container
+    external: true
